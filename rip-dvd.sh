@@ -5,7 +5,6 @@
 
 USERGROUP="me:mine"
 TEMPDIR=/var/tmp/dvd-import/
-SUBDIR=/tmp/sub-import/
 DESTBASE=/var/srv/media/videos/NO-BACKUP-holding/ripping/
 
 if [ -z "$1" ]; then 
@@ -23,7 +22,6 @@ REPORT=${DESTDIR}/report.txt
 /bin/date
 
 /bin/mkdir -p ${DESTDIR}
-/bin/mkdir -p ${SUBDIR}
 /bin/mkdir -p ${TEMPDIR}
 
 /bin/rm -f ${TEMPDIR}/*.mkv
