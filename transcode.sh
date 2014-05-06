@@ -7,6 +7,7 @@ SHORTTEMPDIR=/tmp/transcode/
 LONGTEMPDIR=/var/tmp/transcode/
 LOGFILE=transcode-log.txt
 DETFILE=/tmp/transcode/transcode-det.txt
+POLITE=17
 SPEED=veryfast
 CRF=17
 HOLDDIR=/var/srv/media/videos/NO-BACKUP-holding/transcoding/`/bin/date +%F-%a-%R| /bin/sed 's/:/-/'`
@@ -34,6 +35,11 @@ LogString "${LIST}"
 /bin/mkdir -p ${HOLDDIR}
 
 for FULLPATH in ${LIST} ;do 
+
+	while [[ $POLITE &&  `date +%H` > "${POLITE}" ]]
+		do sleep 15m
+	done
+
 	DIR=$(dirname ${FULLPATH})
 	NAME=$(basename ${FULLPATH})
 	LogString "${FULLPATH}: `/bin/ls -lh ${FULLPATH} | /usr/bin/cut -d" " -f5` `/usr/bin/mkvinfo ${FULLPATH} | /bin/grep MPEG`"
@@ -42,7 +48,7 @@ for FULLPATH in ${LIST} ;do
 	if [ $? -ne 0  ]; then 
 		LogString "does not need transcoding" 
 		NEWPATH=`/bin/echo ${FULLPATH} | /bin/sed -e 's/\(.*\)ivtc./\1/' -e  's/\(.*\)bbc./\1/' -e 's/\(.*\)b5./\1/'\
-				 -e 's/\(.*\)nostrip./\1/' -e 's/\(.*\)film./\1/'`		
+				 -e 's/\(.*\)nostrip./\1/' -e 's/\(.*\)film./\1/' -e 's/\(.*\)mixed./\1/'`		
 		if [ "${FULLPATH}" != "${NEWPATH}" ]; then 
 			mv ${FULLPATH} ${NEWPATH}
 		fi
@@ -74,12 +80,18 @@ for FULLPATH in ${LIST} ;do
 			*film*)
 				LogString "marked as film-rate"
 				NEWPATH=`/bin/echo ${FULLPATH} | /bin/sed 's/\(.*\)film./\1/'`
-				ILACEOPTS="-vf fps=24000/1001"
+				#ILACEOPTS="-vf fps=fps=24000/1001:round=zero"
+				ILACEOPTS="-r 24000/1001"
 				;;
 			*b5*)
 				LogString "marked as b5 mixed telecine"
 				NEWPATH=`/bin/echo ${FULLPATH} | /bin/sed 's/\(.*\)b5./\1/'`
 				ILACEOPTS="-vf pullup,dejudder,fps=60000/1001 "
+				;;
+			*mixed*)
+				LogString "marked as mixed telecine interlaced"
+				NEWPATH=`/bin/echo ${FULLPATH} | /bin/sed 's/\(.*\)mixed./\1/'`
+				ILACEOPTS="-vf pullup,dejudder,idet,yadif=mode=1:deint=interlaced,fps=60000/1001 "
 				;;
 			*)
 				/usr/bin/mkvinfo ${FULLPATH} | /bin/grep 'Interlaced: 1' -q
