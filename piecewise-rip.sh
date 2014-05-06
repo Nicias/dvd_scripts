@@ -77,13 +77,6 @@ for title in $titles
 		#	 -S  ${AUDOPTS} =${VOBNAME}  ${SUBOPTS} --chapters ${SUBDIR}/${DISC}-${title}.chap
 done
 
-cd ${DESTDIR}
-for VIDEO in *.mkv
-	do
-	/bin/echo ${VIDEO} >> ${REPORT}
-	/usr/bin/ffprobe ${VIDEO} 2>&1 >/dev/null | /bin/grep 'Duration\|Stream' >> ${REPORT}
-done
-
 /bin/rm -rf ${TMPDIR}/*.vob
 /bin/rm -rf ${SUBDIR}/*.chap
 /bin/rm -rf ${SUBDIR}/*.sub
