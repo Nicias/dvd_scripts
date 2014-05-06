@@ -2,6 +2,7 @@
 
 /usr/bin/ionice -c3 -p$$
 
+USERGROUP="me:mine"
 TMPDIR=/var/tmp/dvd-import/
 SUBDIR=/tmp/sub-import/
 
@@ -35,7 +36,6 @@ if [ -z "$rawtitles" ] ; then
 	echo "No episodes ripping longest"
 	titles=`/usr/bin/lsdvd -q ${TARGET} | /bin/grep Longest | /usr/bin/cut -f3 -d" "`
 else
-	#titles=`/bin/echo "${rawtitles}" | /usr/bin/uniq -f3 | /usr/bin/cut -b 8-9  | /bin/sed 's/^[0]*//'` 
 	titles=`/bin/echo "${rawtitles}"  | /usr/bin/cut -b 8-9  | /bin/sed 's/^[0]*//'` 
 fi
 
@@ -83,6 +83,6 @@ done
 /bin/rm -rf ${SUBDIR}/*.idx
 /bin/rm -rf ${SUBDIR}/*.mkv
 
-/bin/chown -R nrobbins:residents ${DESTDIR}
+/bin/chown -R ${USERGROUP} ${DESTDIR}
 /usr/bin/eject ${TARGET}
 /bin/date
