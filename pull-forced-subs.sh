@@ -57,11 +57,13 @@ for FULLPATH in ${LIST} ;do
 	HOLDNAME=${HOLDDIR}/${NAME}
 	TEMPNAME=${TEMPDIR}/${NAME}
     SUBNAME=${SUBDIR}/${NAME}-subs.mkv
+    SUBTNAME=${SUBDIR}/${NAME}-subs-temp.mkv
 
 	/bin/mv ${FULLPATH} ${HOLDDIR} 
 	/bin/cp ${HOLDNAME} ${TEMPDIR}
 	LogString "`/bin/date`: ripping only forced subtitles"
-	/usr/bin/ffmpeg -benchmark -forced_subs_only 1 -i ${TEMPNAME} -map 0:s -an -vn -metadata:s:s language=${SUBLANG} \
+	/usr/bin/ffmpeg -benchmark -i ${TEMPNAME} -map 0:s -an -vn -c:s dvdsub ${SUBTNAME} 2>&1 | /usr/bin/tee -a ${DETFILE}
+	/usr/bin/ffmpeg -benchmark -forced_subs_only 1 -i ${SUBTNAME} -map 0:s -metadata:s:s language=${SUBLANG} \
 		  -c:s dvdsub ${SUBNAME} 2>&1 | /usr/bin/tee -a ${DETFILE}
 
 	LogString "`/bin/date`: splitting subs"
@@ -69,6 +71,7 @@ for FULLPATH in ${LIST} ;do
 	while ( /usr/bin/mkvextract tracks ${SUBNAME} ${count}:${SUBDIR}${count}.idx )  ; do
 		let count+=1
 	done
+	LogString "`ls -l ${SUBDIR}`"
 	if [ -s `ls -S ${SUBDIR}/*.sub  | head -1` ] ; then
 		SUBTRACK=`ls -S ${SUBDIR}/*.idx  | head -1`
 		SUBOPTS="--default-track 0:0 --language 0:dut ${SUBTRACK}"  
@@ -76,9 +79,11 @@ for FULLPATH in ${LIST} ;do
 		/usr/bin/mkvmerge -o ${DIR}/${FULLPATH} --engage no_simpleblocks ${TEMPNAME}  ${SUBOPTS}  2>&1 | /usr/bin/tee -a ${DETFILE}
 		LogString "`/bin/date`: finished"
 		LogString "`ffprobe ${FULLPATH}  2>&1 | grep Subtitle`"
+	else
+		LogString "Actually no subtitles"
+		mv ${HOLDDIR} ${FULLPATH}
 	fi
-	rm ${SUBDIR}/*.{idx,mkv,sub}
 	/bin/rm ${TEMPNAME}
-
+	rm ${SUBDIR}/*.{idx,mkv,sub}
 done
 LogString "Transcoding complete"
