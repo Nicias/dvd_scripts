@@ -139,7 +139,7 @@ for FULLPATH in ${LIST} ;do
 		/usr/bin/mkvmerge -i ${TEMPNAME} | /bin/grep VOBSUB -q
 		if [ $? -eq 0 ]; then
 			LogString "has subtitles"
-			subtracks=`/usr/bin/ffprobe ${SUBNAME}/one.mkv 2>&1 | /bin/grep Subtitle | /bin/sed -e "s/[()]/:/g" | /usr/bin/cut -d":" -f2,3`
+			subtracks=`/usr/bin/ffprobe ${TEMPNAME} 2>&1 | /bin/grep Subtitle | /bin/sed -e "s/[()]/:/g" | /usr/bin/cut -d":" -f2,3`
 			for subtrack in ${subtracks} 
 				do
 				set -- `/bin/echo ${subtrack} | /bin/sed -e "s/:/ /"`
@@ -148,7 +148,8 @@ for FULLPATH in ${LIST} ;do
 					SUBLIST="${SUBLIST},${1}"
 				fi
 			done
-			/usr/bin/ffmpeg -benchmark -i ${TEMPNAME} -map 0:s -an -vn -c:s dvdsub ${SUBDIR}/one.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
+			ONEOPTS=`/bin/echo $SUBLIST | sed -e "s/,/ -map 0:/g"`
+			/usr/bin/ffmpeg -benchmark -i ${TEMPNAME} ${ONEOPTS} -c:s dvdsub ${SUBDIR}/one.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
 			/usr/bin/ffmpeg -benchmark -forced_subs_only 1 -i ${SUBDIR}/one.mkv -map 0:s -metadata:s:s language=${SUBLANG} \
 				-c:s dvdsub ${SUBDIR}/two.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
 
@@ -160,7 +161,7 @@ for FULLPATH in ${LIST} ;do
 			done
 			LogString "`/bin/ls -l ${SUBDIR}`"
 			if [ -s `/bin/ls -S ${SUBDIR}/*.sub  | /usr/bin/head -1` ] ; then
-				SUBTRACK=${SUBDIR}/`/bin/ls -S ${SUBDIR}/*.idx  | /usr/bin/head -1`
+				SUBTRACK=`/bin/ls -S ${SUBDIR}/*.idx  | /usr/bin/head -1`
 				FSUBOPTS="--default-track 0:0 --language 0:dut ${SUBTRACK}"
 			else
 				LogString "No Forced subtitles"
