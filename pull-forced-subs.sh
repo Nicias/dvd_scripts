@@ -9,6 +9,7 @@ LOGFILE=sub-force.txt
 DETFILE=/tmp/sub-import/sub-force-det.txt
 SUBLANG=dut
 HOLDDIR=/var/srv/media/videos/NO-BACKUP-holding/subbing/`/bin/date +%F-%a-%R| /bin/sed 's/:/-/'`
+#POLITE=15
 
 LogString () {
 	/bin/echo "$@" >> $LOGFILE
@@ -17,8 +18,8 @@ LogString () {
 
 
 if [ -z "$1" ]; then 
-              /bin/echo usage: $0 files-or-directories
-              exit
+	/bin/echo usage: $0 files-or-directories
+	exit
 fi
 
 /bin/mkdir -p ${SUBDIR}
@@ -35,7 +36,7 @@ LogString "${LIST}"
 /bin/mkdir -p ${HOLDDIR}
 
 for FULLPATH in ${LIST} ;do 
-	
+
 	while [[ $POLITE &&  `date +%H` > "${POLITE}" ]] 
 		do sleep 15m
 	done
@@ -44,46 +45,45 @@ for FULLPATH in ${LIST} ;do
 	NAME=$(basename ${FULLPATH})
 	LogString "${FULLPATH}: `ffprobe ${FULLPATH}  2>&1 | grep Subtitle`"
 
-
 	DURATION=`/usr/bin/ffprobe ${FULLPATH}   2>&1 >/dev/null   | /bin/grep  Duration | /usr/bin/cut -f4 -d" "   | /usr/bin/awk -F: '{ print ($1*60)+ $2}'`
 	if [ $DURATION -lt 60 ] ; then
-        LogString "is short"
+		LogString "is short"
 		TEMPDIR=${SHORTTEMPDIR}
-    else
-       	LogString "is long" 
+	else
+		LogString "is long" 
 		TEMPDIR=${LONGTEMPDIR}
 	fi
 	
 	HOLDNAME=${HOLDDIR}/${NAME}
 	TEMPNAME=${TEMPDIR}/${NAME}
-    SUBNAME=${SUBDIR}/${NAME}-subs.mkv
-    SUBTNAME=${SUBDIR}/${NAME}-subs-temp.mkv
+	SUBNAME=${SUBDIR}/${NAME}-subs.mkv
+	SUBTNAME=${SUBDIR}/${NAME}-subs-temp.mkv
 
 	/bin/mv ${FULLPATH} ${HOLDDIR} 
 	/bin/cp ${HOLDNAME} ${TEMPDIR}
 	LogString "`/bin/date`: ripping only forced subtitles"
 	/usr/bin/ffmpeg -benchmark -i ${TEMPNAME} -map 0:s -an -vn -c:s dvdsub ${SUBTNAME} 2>&1 | /usr/bin/tee -a ${DETFILE}
 	/usr/bin/ffmpeg -benchmark -forced_subs_only 1 -i ${SUBTNAME} -map 0:s -metadata:s:s language=${SUBLANG} \
-		  -c:s dvdsub ${SUBNAME} 2>&1 | /usr/bin/tee -a ${DETFILE}
+		-c:s dvdsub ${SUBNAME} 2>&1 | /usr/bin/tee -a ${DETFILE}
 
 	LogString "`/bin/date`: splitting subs"
 	count=0
 	while ( /usr/bin/mkvextract tracks ${SUBNAME} ${count}:${SUBDIR}${count}.idx )  ; do
 		let count+=1
 	done
-	LogString "`ls -l ${SUBDIR}`"
-	if [ -s `ls -S ${SUBDIR}/*.sub  | head -1` ] ; then
-		SUBTRACK=`ls -S ${SUBDIR}/*.idx  | head -1`
+	LogString "`/bin/ls -l ${SUBDIR}`"
+	if [ -s `/bin/ls -S ${SUBDIR}/*.sub  | /usr/bin/head -1` ] ; then
+		SUBTRACK=`/bin/ls -S ${SUBDIR}/*.idx  | /usr/bin/head -1`
 		SUBOPTS="--default-track 0:0 --language 0:dut ${SUBTRACK}"  
 
 		/usr/bin/mkvmerge -o ${DIR}/${FULLPATH} --engage no_simpleblocks ${TEMPNAME}  ${SUBOPTS}  2>&1 | /usr/bin/tee -a ${DETFILE}
 		LogString "`/bin/date`: finished"
-		LogString "`ffprobe ${FULLPATH}  2>&1 | grep Subtitle`"
+		LogString "`/usr/bin/ffprobe ${FULLPATH}  2>&1 | /bin/grep Subtitle`"
 	else
 		LogString "Actually no subtitles"
-		mv ${HOLDDIR} ${FULLPATH}
+		/bin/mv ${HOLDDIR} ${FULLPATH}
 	fi
 	/bin/rm ${TEMPNAME}
-	rm ${SUBDIR}/*.{idx,mkv,sub}
+	/bin/rm ${SUBDIR}/*.{idx,mkv,sub}
 done
 LogString "Transcoding complete"
