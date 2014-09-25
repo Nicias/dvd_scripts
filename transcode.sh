@@ -11,6 +11,9 @@ DETFILE=/tmp/transcode/transcode-det.txt
 #POLITE=17
 SPEED=veryfast
 CRF=17
+#for debuging
+#SPEED=ultrafast
+#CRF=40
 HOLDDIR=/var/srv/media/videos/NO-BACKUP-holding/transcoding/`/bin/date +%F-%a-%R| /bin/sed 's/:/-/'`
 
 LogString () {
@@ -24,6 +27,7 @@ if [ -z "$1" ]; then
 	exit
 fi
 
+/bin/mkdir -p ${SUBDIR}
 /bin/mkdir -p ${SHORTTEMPDIR}
 /bin/mkdir -p ${LONGTEMPDIR}
 
@@ -128,7 +132,7 @@ for FULLPATH in ${LIST} ;do
 		esac
 		/bin/mv ${FULLPATH} ${HOLDDIR} 
 		LogString "`/bin/date`: starting transcode"
-		/usr/bin/ffmpeg -benchmark -i ${HOLDNAME} -map 0 -c:a copy -c:s copy -c:v libx264 \
+		/usr/bin/ffmpeg -hide_banner -benchmark -i ${HOLDNAME} -map 0 -c:a copy -c:s copy -c:v libx264 \
 			-preset ${SPEED} -crf ${CRF} ${ILACEOPTS} ${TEMPNAME} 2>&1 | /usr/bin/tee -a ${DETFILE}
 
 		LogString "`/bin/date`: starting remuxing"
@@ -149,8 +153,8 @@ for FULLPATH in ${LIST} ;do
 				fi
 			done
 			ONEOPTS=`/bin/echo $SUBLIST | sed -e "s/,/ -map 0:/g"`
-			/usr/bin/ffmpeg -benchmark -i ${TEMPNAME} ${ONEOPTS} -c:s dvdsub ${SUBDIR}/one.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
-			/usr/bin/ffmpeg -benchmark -forced_subs_only 1 -i ${SUBDIR}/one.mkv -map 0:s -metadata:s:s language=${SUBLANG} \
+			/usr/bin/ffmpeg -hide_banner -benchmark -i ${TEMPNAME} ${ONEOPTS} -c:s dvdsub ${SUBDIR}/one.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
+			/usr/bin/ffmpeg -hide_banner -benchmark -forced_subs_only 1 -i ${SUBDIR}/one.mkv -map 0:s -metadata:s:s language=${SUBLANG} \
 				-c:s dvdsub ${SUBDIR}/two.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
 
 			LogString "`/bin/date`: splitting subs"
