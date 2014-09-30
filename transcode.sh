@@ -98,7 +98,7 @@ for FULLPATH in ${LIST} ;do
 			*partial*)
 				LogString "marked as partial film rate/telecine"
 				NEWPATH=`/bin/echo ${FULLPATH} | /bin/sed 's/\(.*\)partial./\1/'`
-				ILACEOPTS="-vf pullup,dejudder -r 24000/1001 "
+				ILACEOPTS="-vf pullup,dejudder,fps=fps=24000/1001:round=zero "
 				;;
 			*mixed*)
 				LogString "marked as mixed telecine/interlaced"
@@ -152,29 +152,29 @@ for FULLPATH in ${LIST} ;do
 					SUBLIST="${SUBLIST},${1}"
 				fi
 			done
-			ONEOPTS=`/bin/echo $SUBLIST | sed -e "s/,/ -map 0:/g"`
-			/usr/bin/ffmpeg -hide_banner -benchmark -i ${TEMPNAME} ${ONEOPTS} -c:s dvdsub ${SUBDIR}/one.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
-			/usr/bin/ffmpeg -hide_banner -benchmark -forced_subs_only 1 -i ${SUBDIR}/one.mkv -map 0:s -metadata:s:s language=${SUBLANG} \
-				-c:s dvdsub ${SUBDIR}/two.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
-
-			LogString "`/bin/date`: splitting subs"
-
-			count=0
-			while ( /usr/bin/mkvextract tracks ${SUBDIR}/two.mkv ${count}:${SUBDIR}${count}.idx )  ; do
-				let count+=1
-			done
-			LogString "`/bin/ls -l ${SUBDIR}`"
-			if [ -s `/bin/ls -S ${SUBDIR}/*.sub  | /usr/bin/head -1` ] ; then
-				SUBTRACK=`/bin/ls -S ${SUBDIR}/*.idx  | /usr/bin/head -1`
-				FSUBOPTS="--default-track 0:0 --language 0:dut ${SUBTRACK}"
-			else
-				LogString "No Forced subtitles"
-			fi
-
-			if [ "${SUBLIST}" = " " ] ; then
+			if [ $SUBLIST = " " ] ; then
 				LogString "no English subtitles"
 				SUBLIST="-S"
 			else
+				ONEOPTS=`/bin/echo $SUBLIST | sed -e "s/,/ -map 0:/g"`
+				/usr/bin/ffmpeg -hide_banner -benchmark -i ${TEMPNAME} -vn -an ${ONEOPTS} -c:s dvdsub ${SUBDIR}/one.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
+				/usr/bin/ffmpeg -hide_banner -benchmark -forced_subs_only 1 -i ${SUBDIR}/one.mkv -map 0:s -metadata:s:s language=${SUBLANG} \
+					-c:s dvdsub ${SUBDIR}/two.mkv 2>&1 | /usr/bin/tee -a ${DETFILE}
+
+				LogString "`/bin/date`: splitting subs"
+
+				count=0
+				while ( /usr/bin/mkvextract tracks ${SUBDIR}/two.mkv ${count}:${SUBDIR}${count}.idx )  ; do
+					let count+=1
+				done
+				LogString "`/bin/ls -l ${SUBDIR}`"
+				if [ -s `/bin/ls -S ${SUBDIR}/*.sub  | /usr/bin/head -1` ] ; then
+					SUBTRACK=`/bin/ls -S ${SUBDIR}/*.idx  | /usr/bin/head -1`
+					FSUBOPTS="--default-track 0:0 --language 0:dut ${SUBTRACK}"
+				else
+					LogString "No Forced subtitles"
+				fi
+
 				SUBLIST=`/bin/echo $SUBLIST | /bin/sed -e "s:,:-s :"`
  			fi
 		else
