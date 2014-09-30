@@ -26,7 +26,6 @@ REPORT=${DESTDIR}/report.txt
 /bin/date
 
 /bin/mkdir -p ${DESTDIR}
-/bin/mkdir -p ${SUBDIR}
 
 /usr/bin/lsdvd ${TARGET} -qas > ${REPORT}
 
